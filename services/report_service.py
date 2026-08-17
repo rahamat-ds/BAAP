@@ -1,0 +1,277 @@
+"""Report generation: PDF (ReportLab), Excel (OpenPyXL) and PowerPoint (python-pptx).
+
+Every builder degrades gracefully: chart images are skipped if ``kaleido``
+isn't installed, and PPTX export returns ``None`` if ``python-pptx`` isn't
+installed, rather than crashing the whole report.
+"""
+from __future__ import annotations
+
+import io
+import re
+from datetime import datetime
+from pathlib import Path
+
+import pandas as pd
+from reportlab.lib import colors
+from reportlab.lib.enums import TA_LEFT
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+from reportlab.lib.units import mm
+from reportlab.platypus import Image, PageBreak, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+
+from config import REPORT_DIR, settings
+from models import KPIResult
+
+ACCENT = colors.HexColor("#6C5CE7")
+DARK = colors.HexColor("#111827")
+MUTED = colors.HexColor("#6B7280")
+LIGHT = colors.HexColor("#F3F4F6")
+
+
+def _styles():
+    ss = getSampleStyleSheet()
+    ss.add(ParagraphStyle("H1x", parent=ss["Heading1"], textColor=DARK, fontSize=20, spaceAfter=4, leading=24))
+    ss.add(ParagraphStyle("H2x", parent=ss["Heading2"], textColor=ACCENT, fontSize=13, spaceBefore=12, spaceAfter=6))
+    ss.add(ParagraphStyle("Bodyx", parent=ss["BodyText"], fontSize=9.5, leading=14, textColor=DARK, alignment=TA_LEFT))
+    ss.add(ParagraphStyle("Mutedx", parent=ss["BodyText"], fontSize=8.5, textColor=MUTED))
+    ss.add(ParagraphStyle("Bulletx", parent=ss["BodyText"], fontSize=9.5, leading=14, leftIndent=10, textColor=DARK))
+    return ss
+
+
+def _md_clean(text: str) -> str:
+    text = text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+    return re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", text)
+
+
+def _format_kpi_value(kpi: KPIResult) -> str:
+    if kpi.value is None:
+        return "—"
+    if "%" in kpi.name:
+        return f"{kpi.value:,.1f}%"
+    if any(w in kpi.name for w in ("Revenue", "Profit", "Value")):
+        return f"{settings.currency_symbol}{kpi.value:,.0f}"
+    return f"{kpi.value:,.0f}" if kpi.value == int(kpi.value) else f"{kpi.value:,.2f}"
+
+
+def _kpi_table(kpis: list[KPIResult]):
+    rows, row = [], []
+    styles = _styles()
+    for kpi in kpis:
+        if kpi.value is None:
+            continue
+        delta = f"  ({kpi.delta_pct:+.1f}%)" if kpi.delta_pct is not None else ""
+        row.append(Paragraph(
+            f"<b>{_format_kpi_value(kpi)}</b>{delta}<br/><font size=7.5 color='#6B7280'>{kpi.name.upper()}</font>",
+            styles["Bodyx"],
+        ))
+        if len(row) == 4:
+            rows.append(row)
+            row = []
+    if row:
+        row += [""] * (4 - len(row))
+        rows.append(row)
+    if not rows:
+        return None
+    table = Table(rows, colWidths=[43 * mm] * 4)
+    table.setStyle(TableStyle([
+        ("BOX", (0, 0), (-1, -1), 0.5, colors.HexColor("#E5E7EB")),
+        ("INNERGRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#E5E7EB")),
+        ("BACKGROUND", (0, 0), (-1, -1), LIGHT),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("TOPPADDING", (0, 0), (-1, -1), 8), ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+        ("LEFTPADDING", (0, 0), (-1, -1), 8),
+    ]))
+    return table
+
+
+def _df_to_table(df: pd.DataFrame, max_rows: int = 18):
+    d = df.head(max_rows).copy()
+    for c in d.columns:
+        if pd.api.types.is_float_dtype(d[c]):
+            d[c] = d[c].round(2)
+    data = [[str(c)[:22] for c in d.columns]] + [[str(v)[:28] for v in r] for r in d.values]
+    n = len(d.columns)
+    table = Table(data, colWidths=[(175 / max(n, 1)) * mm] * n, repeatRows=1)
+    table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), ACCENT),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("FONTSIZE", (0, 0), (-1, -1), 7.5),
+        ("GRID", (0, 0), (-1, -1), 0.35, colors.HexColor("#E5E7EB")),
+        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, LIGHT]),
+        ("TOPPADDING", (0, 0), (-1, -1), 4), ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+    ]))
+    return table
+
+
+def _fig_to_png(fig, width: int = 1000, height: int = 430) -> bytes | None:
+    """Requires kaleido; returns None (and the PDF simply omits the chart) if unavailable."""
+    try:
+        return fig.to_image(format="png", width=width, height=height, scale=2)
+    except Exception:
+        return None
+
+
+def build_pdf(
+    df: pd.DataFrame,
+    kpis: list[KPIResult],
+    title: str = "Business Performance Report",
+    insights_md: str = "",
+    tables: dict[str, pd.DataFrame] | None = None,
+    figures: list | None = None,
+) -> bytes:
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=A4, leftMargin=18 * mm, rightMargin=18 * mm,
+                             topMargin=18 * mm, bottomMargin=16 * mm, title=title, author=settings.app.name)
+    ss = _styles()
+    story = [
+        Paragraph(title, ss["H1x"]),
+        Paragraph(
+            f"Generated by {settings.app.name} &nbsp;\u2022&nbsp; {datetime.now():%d %B %Y, %H:%M} "
+            f"&nbsp;\u2022&nbsp; {len(df):,} records analysed",
+            ss["Mutedx"],
+        ),
+        Spacer(1, 10),
+    ]
+
+    story.append(Paragraph("Key Performance Indicators", ss["H2x"]))
+    kpi_table = _kpi_table(kpis)
+    if kpi_table:
+        story.append(kpi_table)
+    story.append(Spacer(1, 8))
+
+    for fig in (figures or []):
+        png = _fig_to_png(fig)
+        if png:
+            story.append(Image(io.BytesIO(png), width=175 * mm, height=75 * mm))
+            story.append(Spacer(1, 8))
+
+    if insights_md:
+        story.append(Paragraph("AI-Generated Business Insights", ss["H2x"]))
+        for line in insights_md.splitlines():
+            s = line.strip()
+            if not s:
+                continue
+            if s.startswith("#"):
+                story.append(Paragraph(_md_clean(s.lstrip("# ")), ss["H2x"]))
+            elif s.startswith(("- ", "* ")):
+                story.append(Paragraph(_md_clean(s[2:]), ss["Bulletx"], bulletText="\u2022"))
+            else:
+                story.append(Paragraph(_md_clean(s), ss["Bodyx"]))
+
+    for name, table_df in (tables or {}).items():
+        if table_df is None or getattr(table_df, "empty", True):
+            continue
+        story.append(PageBreak())
+        story.append(Paragraph(name, ss["H2x"]))
+        story.append(_df_to_table(table_df))
+
+    def footer(canvas, doc_):
+        canvas.saveState()
+        canvas.setFont("Helvetica", 7.5)
+        canvas.setFillColor(MUTED)
+        canvas.drawString(18 * mm, 10 * mm, f"{settings.app.name} \u2014 confidential")
+        canvas.drawRightString(A4[0] - 18 * mm, 10 * mm, f"Page {doc_.page}")
+        canvas.restoreState()
+
+    doc.build(story, onFirstPage=footer, onLaterPages=footer)
+    return buf.getvalue()
+
+
+def build_excel(sheets: dict[str, pd.DataFrame], kpis: list[KPIResult] | None = None) -> bytes:
+    buf = io.BytesIO()
+    with pd.ExcelWriter(buf, engine="openpyxl") as xl:
+        if kpis:
+            pd.DataFrame([
+                {"KPI": k.name, "Value": _format_kpi_value(k),
+                 "Change %": round(k.delta_pct, 2) if k.delta_pct is not None else None}
+                for k in kpis if k.value is not None
+            ]).to_excel(xl, sheet_name="KPIs", index=False)
+
+        for name, d in sheets.items():
+            if d is None or getattr(d, "empty", True):
+                continue
+            d.head(100_000).to_excel(xl, sheet_name=str(name)[:31], index=False)
+
+        from openpyxl.styles import Alignment, Font, PatternFill
+
+        head_fill = PatternFill("solid", start_color="6C5CE7")
+        for ws in xl.book.worksheets:
+            for cell in ws[1]:
+                cell.font = Font(bold=True, color="FFFFFF")
+                cell.fill = head_fill
+                cell.alignment = Alignment(vertical="center")
+            ws.freeze_panes = "A2"
+            for col in ws.columns:
+                width = max((len(str(c.value)) for c in col if c.value is not None), default=8)
+                ws.column_dimensions[col[0].column_letter].width = min(max(width + 3, 11), 42)
+    return buf.getvalue()
+
+
+def build_csv(df: pd.DataFrame) -> bytes:
+    return df.to_csv(index=False).encode("utf-8")
+
+
+def build_pptx(title: str, kpis: list[KPIResult], insights_md: str = "") -> bytes | None:
+    try:
+        from pptx import Presentation
+        from pptx.dml.color import RGBColor
+        from pptx.util import Inches, Pt
+    except ImportError:
+        return None
+
+    prs = Presentation()
+    prs.slide_width, prs.slide_height = Inches(13.333), Inches(7.5)
+
+    slide = prs.slides.add_slide(prs.slide_layouts[6])
+    box = slide.shapes.add_textbox(Inches(0.8), Inches(2.4), Inches(11), Inches(2))
+    p = box.text_frame.paragraphs[0]
+    p.text = title
+    p.font.size, p.font.bold = Pt(42), True
+    p.font.color.rgb = RGBColor(0x11, 0x18, 0x27)
+    p2 = box.text_frame.add_paragraph()
+    p2.text = f"{settings.app.name} \u00b7 {datetime.now():%d %B %Y}"
+    p2.font.size, p2.font.color.rgb = Pt(16), RGBColor(0x6B, 0x72, 0x80)
+
+    slide = prs.slides.add_slide(prs.slide_layouts[5])
+    slide.shapes.title.text = "Key Performance Indicators"
+    body = slide.shapes.add_textbox(Inches(0.8), Inches(1.7), Inches(11.5), Inches(5)).text_frame
+    for kpi in kpis:
+        if kpi.value is None:
+            continue
+        par = body.add_paragraph()
+        delta = f"  ({kpi.delta_pct:+.1f}%)" if kpi.delta_pct is not None else ""
+        par.text = f"{kpi.name}: {_format_kpi_value(kpi)}{delta}"
+        par.font.size = Pt(18)
+
+    section, bullets = None, []
+
+    def flush():
+        if not section:
+            return
+        sl = prs.slides.add_slide(prs.slide_layouts[5])
+        sl.shapes.title.text = section
+        tf = sl.shapes.add_textbox(Inches(0.8), Inches(1.7), Inches(11.5), Inches(5)).text_frame
+        tf.word_wrap = True
+        for b in bullets[:6]:
+            par = tf.add_paragraph()
+            par.text = "\u2022 " + re.sub(r"\*\*(.+?)\*\*", r"\1", b)
+            par.font.size = Pt(16)
+
+    for line in (insights_md or "").splitlines():
+        s = line.strip()
+        if s.startswith("#"):
+            flush()
+            section, bullets = s.lstrip("# "), []
+        elif s.startswith(("- ", "* ")):
+            bullets.append(s[2:])
+    flush()
+
+    buf = io.BytesIO()
+    prs.save(buf)
+    return buf.getvalue()
+
+
+def save(content: bytes, filename: str) -> Path:
+    path = REPORT_DIR / filename
+    path.write_bytes(content)
+    return path

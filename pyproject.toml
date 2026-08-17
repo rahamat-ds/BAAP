@@ -1,0 +1,55 @@
+[project]
+name = "baap"
+version = "2.0.0"
+description = "Business Analytics Automation Platform: upload, clean, analyze, forecast, chat with, and report on any tabular dataset."
+readme = "README.md"
+requires-python = ">=3.12"
+license = "MIT"
+authors = [{ name = "Rahamat Sekh" }]
+
+dependencies = [
+    "streamlit>=1.40.0",
+    "pandas>=2.2.0",
+    "numpy>=1.26.0",
+    "plotly>=5.22.0",
+    "sqlalchemy>=2.0.0",
+    "scikit-learn>=1.4.0",
+    "openpyxl>=3.1.0",
+    "reportlab>=4.1.0",
+    "faker>=24.0.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.optional-dependencies]
+extras = ["chardet>=5.2.0", "python-pptx>=0.6.23", "kaleido>=0.2.1"]
+ai-anthropic = ["anthropic>=0.40.0"]
+ai-openai = ["openai>=1.50.0"]
+ai-gemini = ["google-generativeai>=0.8.0"]
+dev = ["pytest>=8.0.0", "ruff>=0.6.0"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.setuptools.packages.find]
+include = [
+    "analytics*",
+    "chat*",
+    "config*",
+    "core*",
+    "database*",
+    "forecasting*",
+    "frontend*",
+    "llm*",
+    "models*",
+    "pipelines*",
+    "services*",
+    "visualization*",
+]
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"

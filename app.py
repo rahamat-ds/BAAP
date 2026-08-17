@@ -1,162 +1,100 @@
+"""InsightFlow — Business Analytics Automation Platform.
+
+Run with:  streamlit run app.py
+"""
+from __future__ import annotations
+
 import streamlit as st
-import pandas as pd
 
-from scripts.generate_dataset import generate_dataset
-from modules.analytics import (
-    get_kpis,
-    sales_by_category,
-    sales_by_region,
-    top_products,
-    courier_performance,
-)
-from utils.session import (
-    initialize_session,
-    set_dataset,
-)
-
-initialize_session()
+import llm
+from config import settings
+from database import engine as db_engine
+from services import session_service
+from visualization.theme import inject_css
 
 st.set_page_config(
-    page_title="InsightFlow",
-    page_icon="%$",
-    layout="wide"
+    page_title=settings.app.name,
+    page_icon=settings.app.icon,
+    layout="wide",
+    initial_sidebar_state="expanded",
 )
 
-st.title("InsightFlow💡")
-st.subheader("Business Analytics Automation Platform")
+db_engine()  # ensure schema exists
+session_service.session_id()  # ensure session state initialized
+inject_css()
 
-st.write(
-    "Welcome! This application will automate data cleaning, analysis and visualization."
-)
+PAGES = {
+    "Overview": [
+        st.Page("frontend/pages/home.py", title="Home", default=True),
+        st.Page("frontend/pages/dashboard.py", title="Dashboard"),
+    ],
+    "Data": [
+        st.Page("frontend/pages/upload.py", title="Upload Center"),
+        st.Page("frontend/pages/profiling.py", title="Data Profiling"),
+        st.Page("frontend/pages/cleaning.py", title="Data Cleaning"),
+        st.Page("frontend/pages/validation.py", title="Data Validation"),
+        st.Page("frontend/pages/transform.py", title="Transformation"),
+    ],
+    "Analytics": [
+        st.Page("frontend/pages/analytics_explorer.py", title="Analytics"),
+        st.Page("frontend/pages/visualizations.py", title="Visualizations"),
+        st.Page("frontend/pages/customers.py", title="Customer Analytics" ),
+        st.Page("frontend/pages/products.py", title="Product Analytics"),
+        st.Page("frontend/pages/retail_ops.py", title="Retail Operations"),
+        st.Page("frontend/pages/forecasting_page.py", title="Forecasting"),
+        st.Page("frontend/pages/anomalies.py", title="Anomaly Detection"),
+    ],
+    "AI": [
+        st.Page("frontend/pages/insights.py", title="AI Insights"),
+        st.Page("frontend/pages/chat_page.py", title="Chat with Data"),
+    ],
+    "Tools": [
+        st.Page("frontend/pages/sql_workspace.py", title="SQL Workspace"),
+        st.Page("frontend/pages/reports.py", title="Reports"),
+        st.Page("frontend/pages/exports.py", title="Export Data"),
+    ],
+    "System": [
+        st.Page("frontend/pages/history.py", title="History"),
+        st.Page("frontend/pages/settings_page.py", title="Settings"),
+    ],
+}
 
-# -------------------------------
-# Sidebar
-# -------------------------------
-
-st.sidebar.title("InsightFlow")
-
-source = st.sidebar.radio(
-    "Choose Data Source",
-    [
-        "Upload CSV",
-        "Generate Sample Dataset"
-    ]
-)
-
-# DataFrame placeholder
-df = None
-
-# -------------------------------
-# Upload CSV
-# -------------------------------
-
-if source == "Upload CSV":
-
-    uploaded_file = st.file_uploader(
-        "Upload your sales CSV",
-        type=["csv"]
+with st.sidebar:
+    st.markdown(
+        f"<div style='display:flex;align-items:center;gap:10px;padding:2px 0 10px'>"
+        f"<div style='font-size:26px'>{settings.app.icon}</div>"
+        f"<div><div style='font-weight:700;line-height:1.15;font-size:1.05rem'>{settings.app.name}</div>"
+        f"<div style='font-size:0.72rem;color:#9095A8'>{settings.app.tagline}</div></div></div>",
+        unsafe_allow_html=True,
     )
 
-    if uploaded_file is not None:
+nav = st.navigation(PAGES, position="sidebar")
 
-        df = pd.read_csv(uploaded_file)
-        set_dataset(df)
-        st.success("CSV uploaded successfully!")
+with st.sidebar:
+    st.divider()
+    st.caption("ACTIVE DATASET")
+    names = session_service.dataset_names()
+    if names:
+        current = session_service.active_name()
+        choice = st.selectbox("Active dataset", names, index=names.index(current) if current in names else 0,
+                               label_visibility="collapsed")
+        if choice != current:
+            session_service.set_active(choice)
+            st.rerun()
+        df = session_service.get_df(choice)
+        st.caption(f"{len(df):,} rows \u00d7 {df.shape[1]} cols")
+    else:
+        st.caption("None loaded")
+        if st.button("\u26a1 Load demo data", use_container_width=True):
+            from services import dataset_service
 
-# -------------------------------
-# Generate Sample Dataset
-# -------------------------------
-
-elif source == "Generate Sample Dataset":
-
-    rows = st.sidebar.slider(
-        "Number of Orders",
-        min_value=100,
-        max_value=10000,
-        value=1000,
-        step=100
-    )
-
-    if st.sidebar.button("Generate Dataset"):
-
-        with st.spinner("Generating synthetic retail dataset..."):
-
-            df = generate_dataset(rows)
-            set_dataset(df)
-        st.success(f"Generated {rows:,} orders successfully!")
-
-# -------------------------------
-# Display Dataset
-# -------------------------------
-if df is not None:
-    kpis = get_kpis(df)
-    st.subheader("Brief Overview")
-
-    c1, c2, c3, c4, c5 = st.columns(5)
-
-    c1.metric(
-        "Revenue",
-        f"₹{kpis['Revenue']:,.0f}"
-    )
-
-    c2.metric(
-        "Profit",
-        f"₹{kpis['Profit']:,.0f}"
-    )
-
-    c3.metric(
-        "Orders",
-        f"{kpis['Orders']:,}"
-    )
-
-    c4.metric(
-        "Avg Order",
-        f"₹{kpis['Average Order Value']:,.0f}"
-    )
-
-    c5.metric(
-        "RTO %",
-        f"{kpis['RTO Rate']:.2f}%"
-    )
+            with st.spinner("Generating sample dataset..."):
+                dataset_service.load_sample_dataset()
+            st.rerun()
 
     st.divider()
+    provider = llm.active_provider_name()
+    st.caption(f"\U0001f7e2 {provider.title()} connected" if provider else "\u26aa Offline analyst mode")
+    st.caption(f"v{settings.app.version}")
 
-    st.subheader("Dataset Summary")
-
-    col1, col2, col3 = st.columns(3)
-
-    col1.metric(
-        "Rows",
-        f"{df.shape[0]:,}"
-    )
-
-    col2.metric(
-        "Columns",
-        df.shape[1]
-    )
-
-    col3.metric(
-        "Missing Values",
-        int(df.isna().sum().sum())
-    )
-
-
-    st.divider()
-
-    st.subheader("Dataset Preview")
-
-    st.dataframe(
-        df,
-        use_container_width=True
-    )
-
-    csv = df.to_csv(index=False).encode("utf-8")
-
-    st.download_button(
-    label="⬇ Download CSV",
-    data=csv,
-    file_name="retail_orders.csv",
-    mime="text/csv"
-)
-
-
+nav.run()

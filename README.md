@@ -1,166 +1,92 @@
-# 📊 InsightFlow
+# 💡 BAAP — Business Analytics Automation Platform
 
-> **Automated Business Analytics Platform built with Python & Streamlit**
+BAAP turns any spreadsheet or database table into a full analytics
+workspace: upload, clean, validate, explore, visualize, forecast, chat
+with, and report on your data — no schema required, no data science
+background needed.
 
-InsightFlow is an interactive analytics platform that transforms raw business datasets into meaningful insights with minimal effort. It automates common data analysis tasks including data cleaning, KPI generation, exploratory analysis, and interactive visualizations allowing analysts and decision-makers to focus on interpreting results instead of writing repetitive code.
+Runs entirely offline out of the box. AI Insights and Chat with Data
+automatically upgrade to LLM-narrated answers if you add an API key.
 
-Whether you're working with e-commerce, retail, logistics, or operational datasets, InsightFlow provides a fast and user-friendly workflow for understanding your data.
-
----
-
-## 🚀 Features
-
-### 🧹 Data Cleaning
-
-* Handle missing values
-* Remove duplicate records
-* Detect inconsistent data
-* Generate a cleaning summary report
-
-### 📈 Analytics Dashboard
-
-Automatically calculates important business metrics including:
-
-* Total Revenue
-* Total Profit
-* Number of Orders
-* Average Order Value (AOV)
-* Return-to-Origin (RTO) Rate
-
-### 📊 Interactive Visualizations
-
-Generate insightful charts such as:
-
-* Sales by Category
-* Sales by Region
-* Top Selling Products
-* Courier Performance
-* Revenue Distribution
-* Operational Performance Metrics
-
-- along with useful filters so that you can dive deep.
-
-### 📑 Dataset Summary
-
-Quickly inspect:
-
-* Dataset dimensions
-* Column information
-* Missing values
-* Statistical summaries
-
----
-
-## 🛠 Tech Stack
-
-| Category        | Technologies  |
-| --------------- | ------------- |
-| Language        | Python        |
-| UI              | Streamlit     |
-| Data Processing | Pandas, NumPy |
-| Visualization   | Plotly        |
-| Synthetic Data  | Faker         |
-| Version Control | Git & GitHub  |
-
----
-
-## 📂 Project Structure
-
-```text
-InsightFlow/
-│
-├── app.py                 # Main Streamlit application
-├── core/                  # Data generation modules
-├── modules/               # Analytics & cleaning logic
-├── scripts/               # Synthetic dataset generator
-├── assets/                # Images & media
-├── requirements.txt
-└── README.md
-```
-
----
-
-## ⚡ Getting Started
-
-Clone the repository
+## Quick start
 
 ```bash
-git clone https://github.com/rahamat-ds/InsightFlow.git
-```
-
-Move into the project directory
-
-```bash
-cd InsightFlow
-```
-
-Install dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-Run the application
-
-```bash
+uv venv
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
+uv pip install -r requirements.txt
 streamlit run app.py
 ```
----
 
-## 📷 Application Preview
+### Optional: enable AI features
 
-> Screenshots and demo GIFs will be added soon.
+```bash
+cp .env.example .env
+# then edit .env and set ONE of:
+#   ANTHROPIC_API_KEY=...
+#   OPENAI_API_KEY=...
+#   GEMINI_API_KEY=...
+pip install anthropic     # matching the key you set
+```
+See `docs/CONFIGURATION.md` for every setting.
 
----
+## What's inside
 
-## 💡 Why InsightFlow?
+- **Upload any data.** CSV, Excel (multi-sheet), JSON, ZIP, or connect a
+  SQL database. Load multiple datasets and switch between them.
+- **Clean it.** Duplicates, missing values, outliers, text/date
+  normalization, one-click auto-clean, full undo history.
+- **Trust it.** Business-rule validation and a structural data-quality
+  score — generalized to work on *any* dataset via automatic column-role
+  detection, not a fixed schema.
+- **Explore it.** 14 interactive chart types, KPI dashboards, RFM customer
+  segmentation, ABC product classification, and (for e-commerce order
+  data) courier/RTO/shipping analytics.
+- **Predict it.** Forecasting (Ridge / Random Forest / moving average) and
+  anomaly detection (z-score / IQR / Isolation Forest / time-series).
+- **Ask it questions.** Chat with your data in plain English, and get
+  automated business insights — both work fully offline.
+- **Query it.** A real SQL workspace across every loaded dataset.
+- **Report it.** One-click PDF, Excel and PowerPoint exports.
 
-Business analysts often spend a significant amount of time cleaning datasets and creating repetitive reports before they can begin meaningful analysis.
+See `docs/FEATURES.md` for the full list.
 
-InsightFlow aims to reduce this overhead by providing a streamlined interface for:
+## Project structure
 
-* Automated preprocessing
-* Exploratory Data Analysis (EDA)
-* Business KPI reporting
-* Interactive dashboards
-* Rapid insight generation
+```
+BAAP/
+├── app.py                  Streamlit entrypoint (navigation, sidebar)
+├── config/                 Settings, semantic column roles, palettes
+├── core/                   Mapping engine, dtype helpers, domain reference data
+│   └── domain/              Indian-retail master data (geography, products, ...)
+├── database/                SQLite engine + repository (session history)
+├── models/                  Typed dataclasses shared across modules
+├── pipelines/                Ingestion, cleaning, validation, profiling, transform
+├── analytics/                KPIs, customers (RFM), products (ABC), retail ops, insights
+├── forecasting/              Forecasting models + anomaly detection
+├── llm/                      Provider-agnostic AI client (Anthropic/OpenAI/Gemini)
+├── chat/                     Natural-language querying + conversation history
+├── visualization/            Plotly chart factory + theme/CSS
+├── services/                  Session state, dataset loading, reports, sample data
+├── frontend/pages/            One file per Streamlit page (21 pages)
+├── tests/                     Unit tests + full-page AppTest smoke tests
+├── docs/                      Architecture, configuration, features, migration notes
+└── data/                      uploads/ reports/ samples/ (gitignored) + insightflow.db
+```
 
----
+See `docs/ARCHITECTURE.md` for the full design rationale, including why
+there's no separate REST API layer and no user-authentication system.
 
-## 🗺 Roadmap
+## Running tests
 
-Upcoming features include:
+```bash
+uv pip install -r requirements.txt   # includes pytest
+pytest
+```
 
-* SQL Database Connectivity
-* Excel File Support
-* AI-powered Data Insights
-* Natural Language Querying
-* Predictive Analytics
-* Automated Report Generation (PDF)
-* Machine Learning Module
-* User Authentication
-* Dashboard Export
-* Cloud Deployment
+92 tests cover every pipeline/analytics/forecasting/chat function directly,
+plus a full Streamlit `AppTest` smoke test that renders all 21 pages in
+both the empty and data-loaded state.
 
----
+## License
 
-## 🤝 Contributing
-
-Contributions, feature requests, and suggestions are always welcome.
-
-If you'd like to improve InsightFlow:
-
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Open a Pull Request
-
----
-
-## 📜 License
-
-This project is released under the MIT License.
-
----
-
-⭐ If you found this project useful, consider giving it a star on GitHub.
+MIT — see `LICENSE`.
