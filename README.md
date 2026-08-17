@@ -51,23 +51,23 @@ ________________________________________________________________________________
 
 ```
 BAAP/
-├── app.py                  Streamlit entrypoint (navigation, sidebar)
-├── config/                 Settings, semantic column roles, palettes
-├── core/                   Mapping engine, dtype helpers, domain reference data
-│   └── domain/              Indian-retail master data (geography, products, ...)
-├── database/                SQLite engine + repository (session history)
-├── models/                  Typed dataclasses shared across modules
-├── pipelines/                Ingestion, cleaning, validation, profiling, transform
-├── analytics/                KPIs, customers (RFM), products (ABC), retail ops, insights
-├── forecasting/              Forecasting models + anomaly detection
-├── llm/                      Provider-agnostic AI client (Anthropic/OpenAI/Gemini)
-├── chat/                     Natural-language querying + conversation history
-├── visualization/            Plotly chart factory + theme/CSS
-├── services/                  Session state, dataset loading, reports, sample data
-├── frontend/pages/            One file per Streamlit page (21 pages)
-├── tests/                     Unit tests + full-page AppTest smoke tests
-├── docs/                      Architecture, configuration, features, migration notes
-└── data/                      uploads/ reports/ samples/ (gitignored) + insightflow.db
+├── app.py                Streamlit entrypoint (navigation, sidebar)
+├── config/               Settings, semantic column roles, palettes
+├── core/                 Mapping engine, dtype helpers, domain reference data
+│   └── domain/           Indian-retail master data (geography, products, ...)
+├── database/             SQLite engine + repository (session history)
+├── models/               Typed dataclasses shared across modules
+├── pipelines/            Ingestion, cleaning, validation, profiling, transform
+├── analytics/            KPIs, customers (RFM), products (ABC), retail ops, insights
+├── forecasting/          Forecasting models + anomaly detection
+├── llm/                  Provider-agnostic AI client (Anthropic/OpenAI/Gemini)
+├── chat/                 Natural-language querying + conversation history
+├── visualization/        Plotly chart factory + theme/CSS
+├── services/             Session state, dataset loading, reports, sample data
+├── frontend/pages/       One file per Streamlit page (21 pages)
+├── tests/                Unit tests + full-page AppTest smoke tests
+├── docs/                 Architecture, configuration, features, migration notes
+└── data/                 uploads/ reports/ samples/ (gitignored) + insightflow.db
 ```
 
 See `docs/ARCHITECTURE.md` for the full design rationale.
@@ -78,7 +78,6 @@ ________________________________________________________________________________
 uv pip install -r requirements.txt   # includes pytest
 pytest
 ```
-
 92 tests cover every pipeline/analytics/forecasting/chat function directly,
 plus a full Streamlit `AppTest` smoke test that renders all 21 pages in
 both the empty and data-loaded state.
@@ -88,5 +87,7 @@ ________________________________________________________________________________
 If you found any bugs or have a feature request, create an issue.
 If you want to improve the work, then
 ```
-Fork the Repo -> Create a Branch -> Ensure all tests pass -> Open a Pull Request 
+Fork the Repo ⇒ Create a Branch ⇒ Ensure all tests pass ⇒ Open a Pull Request 
 ```
+
+### If you liked this work, consider giving it a Star. 🌟
