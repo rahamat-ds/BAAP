@@ -1,22 +1,19 @@
-# 💡 BAAP — Business Analytics Automation Platform
+# 💡 BAAP - Business Analytics Automation Platform
 
-BAAP turns any spreadsheet or database table into a full analytics
-workspace: upload, clean, validate, explore, visualize, forecast, chat
-with, and report on your data — no schema required, no data science
-background needed.
-
-Runs entirely offline out of the box. AI Insights and Chat with Data
-automatically upgrade to LLM-narrated answers if you add an API key.
-
+BAAP turns any spreadsheet or database table into a full analytics workspace: upload, clean, validate, explore, visualize, forecast, and report on your data - no schema required, no data science
+background needed. Runs entirely offline out of the box. AI Insights and Chat with Data automatically upgrade to LLM-narrated answers if you add an API key.
+_______________________________________________________________________________________
 ## Quick start
 
 ```bash
+git clone https://github.com/rahamat-ds/BAAP
+cd BAAP
 uv venv
 source .venv/bin/activate        # Windows: .venv\Scripts\activate
 uv pip install -r requirements.txt
 streamlit run app.py
 ```
-
+_______________________________________________________________________________________
 ### Optional: enable AI features
 
 ```bash
@@ -28,7 +25,7 @@ cp .env.example .env
 pip install anthropic     # matching the key you set
 ```
 See `docs/CONFIGURATION.md` for every setting.
-
+_______________________________________________________________________________________
 ## What's inside
 
 - **Upload any data.** CSV, Excel (multi-sheet), JSON, ZIP, or connect a
@@ -49,7 +46,7 @@ See `docs/CONFIGURATION.md` for every setting.
 - **Report it.** One-click PDF, Excel and PowerPoint exports.
 
 See `docs/FEATURES.md` for the full list.
-
+_______________________________________________________________________________________
 ## Project structure
 
 ```
@@ -73,9 +70,8 @@ BAAP/
 └── data/                      uploads/ reports/ samples/ (gitignored) + insightflow.db
 ```
 
-See `docs/ARCHITECTURE.md` for the full design rationale, including why
-there's no separate REST API layer and no user-authentication system.
-
+See `docs/ARCHITECTURE.md` for the full design rationale.
+_______________________________________________________________________________________
 ## Running tests
 
 ```bash
@@ -86,7 +82,11 @@ pytest
 92 tests cover every pipeline/analytics/forecasting/chat function directly,
 plus a full Streamlit `AppTest` smoke test that renders all 21 pages in
 both the empty and data-loaded state.
+_______________________________________________________________________________________
+## Feedback & Contribution
 
-## License
-
-MIT — see `LICENSE`.
+If you found any bugs or have a feature request, create an issue.
+If you want to improve the work, then
+```
+Fork the Repo -> Create a Branch -> Ensure all tests pass -> Open a Pull Request 
+```
