@@ -1,16 +1,13 @@
 """Home — landing page with a quick start and platform overview."""
 import streamlit as st
+
 from config import settings
 from frontend.common import bootstrap
 from services import dataset_service, session_service
 
 bootstrap(settings.app.name, settings.app.tagline)
 
-st.markdown(
-    "Upload your business data — or start with the bundled Indian retail sample — "
-    "and BAAP will clean it, profile it, chart it, forecast it, and let you "
-    "chat with it in plain English."
-)
+st.markdown("## Business Analytics Automation Platform")
 
 col1, col2, col3 = st.columns(3)
 with col1:
@@ -51,18 +48,18 @@ else:
 st.divider()
 st.markdown("#### What's inside")
 features = [
-    ("\U0001f9f9", "Data Cleaning", "Duplicates, missing values, outliers, text normalization, undo history."),
-    ("\U0001f50d", "Profiling & Quality Scoring", "Column-level stats, correlations, a 0-100 structural quality score."),
-    ("\u2705", "Business Rule Validation", "Negative revenue, below-cost sales, invalid quantities and more."),
-    ("\U0001f4ca", "14 Chart Types", "Bar, line, area, pie, treemap, sunburst, waterfall and more, all themed."),
-    ("\U0001f4c8", "Forecasting", "Ridge regression, Random Forest, or moving-average with confidence bands."),
-    ("\u26a0\ufe0f", "Anomaly Detection", "Z-score, IQR, Isolation Forest, and rolling time-series anomalies."),
-    ("\U0001f9e0", "AI Insights & Chat", "Works fully offline; upgrades automatically if you add an LLM API key."),
-    ("\U0001f5c3\ufe0f", "SQL Workspace", "Query any loaded dataset with real SQL via an in-memory engine."),
-    ("\U0001f4c4", "Reports", "One-click PDF, Excel and PowerPoint exports with KPIs and AI insights."),
+    ("Data Cleaning", "Duplicates, missing values, outliers, text normalization, undo history."),
+    ("Profiling & Quality Scoring", "Column-level stats, correlations, a 0-100 structural quality score."),
+    ("Business Rule Validation", "Negative revenue, below-cost sales, invalid quantities and more."),
+    ("14 Chart Types", "Bar, line, area, pie, treemap, sunburst, waterfall and more, all themed."),
+    ("Forecasting", "Ridge regression, Random Forest, or moving-average with confidence bands."),
+    ("Anomaly Detection", "Z-score, IQR, Isolation Forest, and rolling time-series anomalies."),
+    ("AI Insights & Chat", "Works fully offline; upgrades automatically if you add an LLM API key."),
+    ("SQL Workspace", "Query any loaded dataset with real SQL via an in-memory engine."),
+    ("Reports", "One-click PDF, Excel and PowerPoint exports with KPIs and AI insights."),
 ]
 cols = st.columns(3)
-for i, (icon, title, desc) in enumerate(features):
+for i, (title, desc) in enumerate(features):
     with cols[i % 3]:
-        st.markdown(f"**{icon} {title}**")
+        st.markdown(f"**{title}**")
         st.caption(desc)

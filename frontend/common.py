@@ -11,8 +11,8 @@ from visualization.theme import inject_css, page_header
 def bootstrap(title: str, subtitle: str = "") -> None:
     """Standard per-page setup: theme CSS + header."""
     inject_css()
-    page_header(title)
-
+    page_title(title)
+    
 
 def require_dataset() -> tuple[str, pd.DataFrame, dict]:
     """Stop the page with a friendly prompt if no dataset is loaded yet.

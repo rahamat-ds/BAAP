@@ -1,11 +1,9 @@
-"""InsightFlow — Business Analytics Automation Platform.
+"""BAAP — Business Analytics Automation Platform.
 
 Run with:  streamlit run app.py
 """
 from __future__ import annotations
-
 import streamlit as st
-
 import llm
 from config import settings
 from database import engine as db_engine
@@ -14,7 +12,7 @@ from visualization.theme import inject_css
 
 st.set_page_config(
     page_title=settings.app.name,
-    page_icon=settings.app.icon,
+    # page_icon=settings.app.icon,
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -62,9 +60,9 @@ PAGES = {
 with st.sidebar:
     st.markdown(
         f"<div style='display:flex;align-items:center;gap:10px;padding:2px 0 10px'>"
-        f"<div style='font-size:26px'>{settings.app.icon}</div>"
+        # f"<div style='font-size:26px'>{settings.app.icon}</div>"
         f"<div><div style='font-weight:700;line-height:1.15;font-size:1.05rem'>{settings.app.name}</div>"
-        f"<div style='font-size:0.72rem;color:#9095A8'>{settings.app.tagline}</div></div></div>",
+        f"<div style='font-size:0.82rem;color:#9095A8'>{settings.app.tagline}</div></div></div>",
         unsafe_allow_html=True,
     )
 

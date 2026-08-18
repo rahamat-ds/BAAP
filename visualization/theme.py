@@ -1,7 +1,7 @@
 """Application theme: CSS injection and reusable page-chrome components.
 
 A single dark, professional SaaS theme with an indigo/teal accent —
-InsightFlow's visual identity. All pages call these helpers instead of
+BAAP's visual identity. All pages call these helpers instead of
 writing raw HTML/CSS inline, so the look stays consistent and easy to
 retheme from one place.
 """
@@ -81,9 +81,8 @@ def inject_css() -> None:
 
 
 def page_header(title: str, subtitle: str = "", icon: str = "") -> None:
-    icon = icon or settings.app.icon
     st.markdown(
-        f'<div class="if-header"><span class="icon">{icon}</span><h1 style="margin:0">{title}</h1></div>',
+        f'<div class="if-header"><h1 style="margin:0">{title}</h1></div>',
         unsafe_allow_html=True,
     )
     if subtitle:

@@ -37,11 +37,11 @@ def _env_float(name: str, default: float) -> float:
 # Paths
 # --------------------------------------------------------------------------
 ROOT_DIR = Path(__file__).resolve().parent.parent
-DATA_DIR = Path(os.getenv("INSIGHTFLOW_DATA_DIR", ROOT_DIR / "data"))
+DATA_DIR = Path(os.getenv("BAAP_DATA_DIR", ROOT_DIR / "data"))
 UPLOAD_DIR = DATA_DIR / "uploads"
 REPORT_DIR = DATA_DIR / "reports"
 SAMPLE_DIR = DATA_DIR / "samples"
-DB_PATH = DATA_DIR / "insightflow.db"
+DB_PATH = DATA_DIR / "baap.db"
 
 for _d in (DATA_DIR, UPLOAD_DIR, REPORT_DIR, SAMPLE_DIR):
     _d.mkdir(parents=True, exist_ok=True)
@@ -49,11 +49,11 @@ for _d in (DATA_DIR, UPLOAD_DIR, REPORT_DIR, SAMPLE_DIR):
 
 @dataclass(frozen=True)
 class AppMeta:
-    """Product identity — preserved from the original InsightFlow project."""
+    """Product identity — BAAP (Business Analytics Automation Platform)."""
 
-    name: str = "InsightFlow"
+    name: str = "BAAP"
     tagline: str = "Business Analytics Automation Platform"
-    icon: str = "💡"
+    icon: str = ""
     version: str = "2.0.0"
 
 
